@@ -1,9 +1,6 @@
-````markdown
 # Assignment 01 – Solution in Golang
 
 This project is a simple authentication flow implemented in **Golang**, demonstrating user signup, login, and OTP-based verification using **in-memory storage**.
-
----
 
 ## How to Run
 
