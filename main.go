@@ -5,70 +5,42 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-
-	"golang.org/x/crypto/bcrypt"
+	"net/http"
 )
 
-type user struct {
-	name     string
-	password []byte
+type userRequest struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
 }
 
-var users = make([]user, 0)
+type user struct {
+	Name     string `json:"name"`
+	Password []byte `json:"password"`
+}
+
+type response struct {
+	Message string `json:"message"`
+}
+
+var User = &user{}
+var OTP = ""
+
+const port = ":8080"
 
 func main() {
-	// Take User input for username and password
-	var username string
-	var password string
-	fmt.Println("Enter your Username: ")
-	fmt.Scan(&username)
-	fmt.Println("Enter your password")
-	fmt.Scan(&password)
-
-	// Hash the password and store in in-memory array
-	cost := bcrypt.DefaultCost
-	hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), cost)
-	if err != nil {
-		log.Printf("Error hashing the password: %v\n", err)
+	mux := &http.ServeMux{}
+	server := &http.Server{
+		Addr:    port,
+		Handler: mux,
 	}
 
-	users = append(users, user{name: username, password: hashedPass})
+	mux.HandleFunc("POST /signup", signupHandler)
+	mux.HandleFunc("POST /login", loginHandler)
+	mux.HandleFunc("POST /otp", otpHandler)
 
-	for _, user := range users {
-		fmt.Printf("Username: %s, Password: %s\n", user.name, user.password)
-	}
-
-	// Ask the user to log-in using username and password
-	var name string
-	var pass string
-	fmt.Println("Enter your username:")
-	fmt.Scan(&name)
-	fmt.Println("Enter your password:")
-	fmt.Scan(&pass)
-
-	err = bcrypt.CompareHashAndPassword(users[0].password, []byte(pass))
-	if err != nil {
-		fmt.Println("Invalid Credentials")
-		return
-	}
-
-	// Adding MFA layer
-	fmt.Println("Login Successful")
-	otp, err := GenerateOTP(6)
-	if err != nil {
-		fmt.Printf("Error while creating the otp: %v", err)
-		return
-	}
-	fmt.Printf("Generated OTP: %s\n", otp)
-
-	var userEnteredOTP string
-	fmt.Println("Enter your OTP: ")
-	fmt.Scan(&userEnteredOTP)
-
-	if userEnteredOTP == otp {
-		fmt.Println("Welcome, your entering Nirvana!")
-	} else {
-		fmt.Println("Your access is restricted in Nirvana!")
+	fmt.Printf("Server running at port %s\n", port)
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("Error in running server: %v", err)
 	}
 }
 
